@@ -1,0 +1,32 @@
+data_dir: data
+results_dir: results
+repo_id: Forithmus/MR-RATE
+dataset_revision: main
+source_batches: [batch26]
+model_id: google/medsiglip-448
+model_revision: main
+seed: 42
+split: validation
+max_studies: 30
+max_total_gb: 10.0
+brain_only: true
+brain_columns:
+  - BodyPartExamined
+  - StudyDescription
+  - SeriesDescription
+  - body_part
+  - ProtocolName
+  - PerformedProcedureStepDescription
+  - ProcedureCodeSequence_0_CodeMeaning
+sequence_priority: [FLAIR, T2w, T1w]
+min_text_chars: 10
+findings_fallback: false
+n_slices: 3
+slice_fractions: [0.2, 0.5, 0.8]
+percentiles: [1.0, 99.0]
+batch_size: 4
+device: auto
+dtype: float32
+bootstrap_samples: 2000
+min_subgroup_n: 10
+near_duplicate_threshold: 0.9

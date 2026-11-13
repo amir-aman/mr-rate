@@ -1,0 +1,12 @@
+# Uses all downloaded auxiliary files but reads/selects only batch26 for the experiment.
+data_dir: data
+results_dir: results/batch26-validation
+repo_id: Forithmus/MR-RATE
+dataset_revision: f6e39794e7820c96c18465231a30da424e6d1c69
+source_batches: [batch26]
+split: validation
+max_studies: 30
+max_total_gb: 10.0
+brain_only: true
+model_id: google/medsiglip-448
+model_revision: main

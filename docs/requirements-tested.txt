@@ -1,0 +1,15 @@
+# Direct dependency versions used for Windows/Python 3.13 validation.
+# Not a complete transitive lock; use pyproject.toml for portable installation.
+numpy==2.4.6
+pandas==3.0.3
+nibabel==5.5.0
+Pillow==12.3.0
+matplotlib==3.11.1
+PyYAML==6.0.3
+huggingface-hub==2.4.0
+torch==2.14.0+cu130
+transformers==5.23.0
+safetensors==0.8.0
+sentencepiece==0.2.3
+pytest==9.2.0
+ruff==0.17.5
