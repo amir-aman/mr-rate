@@ -28,13 +28,16 @@ depth=ndi.map_coordinates(dist,ijk.T,order=1,mode='nearest')
 shade=np.clip(1-depth/9.0,0,1)
 lo=m.bounds[0]; hi=m.bounds[1]
 q=np.round((m.vertices-lo)/(hi-lo)*65535).astype('<u2')
-out='docs/assets/'
+out='explorer/aggregates/'
 with open(out+'brain.bin','wb') as fh:
     fh.write(struct.pack('<4sII6f',b'BRN1',len(q),len(m.faces),*lo,*hi))
     fh.write(q.tobytes()); fh.write(np.round(shade*255).astype('u1').tobytes())
     pad=(-fh.tell())%4; fh.write(b'\0'*pad)
     fh.write(m.faces.astype('<u4').tobytes())
-print('brain.bin',os.path.getsize(out+'brain.bin'))
+import gzip, shutil
+with open(out+'brain.bin','rb') as src, gzip.open(out+'brain.bin.gz','wb',compresslevel=9) as dst: shutil.copyfileobj(src,dst)
+os.remove(out+'brain.bin')
+print('brain.bin.gz',os.path.getsize(out+'brain.bin.gz'))
 # slice atlas: brain-masked T1 at 1.5 mm, axial slices, anterior up, patient right on screen right (as in the repo QC)
 brainmask=ndi.binary_fill_holes(ndi.binary_closing(mask,iterations=3))
 Tm=np.where(ndi.gaussian_filter(brainmask.astype(float),1)>0.5,T,0)

@@ -1,11 +1,11 @@
 # Third-party material in the explorer
 
-The explorer in this folder is a static page. Everything it loads is stored in `docs/`.
+`index.html` is self-contained. Everything below is embedded in that one file.
 
 ## MNI ICBM152 template
 
-`assets/brain.bin` (surface mesh) and `assets/mni_slices.png` (axial slices) are derived from the
-MNI ICBM 2009a Nonlinear Symmetric template, as distributed with the nilearn package.
+The brain surface and axial slices are derived from the MNI ICBM 2009a Nonlinear Symmetric template,
+as distributed with the nilearn package.
 
 Copyright (C) 1993-2009 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological
 Institute, McGill University. Permission to use, copy, modify, and distribute this software and
@@ -19,7 +19,7 @@ The template is an average of healthy volunteers. It is not part of MR-RATE and 
 
 ## three.js
 
-`assets/app.js` bundles three.js, MIT License, Copyright 2010-2026 three.js authors.
+MIT License, Copyright 2010-2026 three.js authors.
 
 ## Fonts
 

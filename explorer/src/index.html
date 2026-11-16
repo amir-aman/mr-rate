@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MR-RATE explorer | brain MRI and report retrieval</title>
+<meta name="description" content="Interactive 3D brain and data explorer for an MRI and radiology report retrieval baseline on the MR-RATE dataset. Aggregate statistics only, no patient data.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"Bricolage Grotesque";src:url("FONT_DISPLAY") format("woff2");font-weight:200 800;font-display:swap}
+@font-face{font-family:"Instrument Sans";src:url("FONT_BODY") format("woff2");font-weight:400 700;font-display:swap}
+:root{
+  --bg:#000; --card:#0B0B0C; --card2:#141416; --line:#202023; --line2:#2C2C30;
+  --ink:#F3F3F1; --soft:#ABABA6; --muted:#76766F;
+  --bar:#12A497; --bar2:#C8822A;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",sans-serif;
+  --body:"Instrument Sans","Avenir Next","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:-0.025em;margin:0}
+p{margin:0}
+button{font:inherit;cursor:pointer;color:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+
+/* ---------- hero ---------- */
+.hero{position:relative;height:100vh;height:100svh;min-height:660px;max-height:1100px;overflow:hidden;
+  background:radial-gradient(50% 55% at 58% 44%,#0D1415 0%,#050707 45%,#000 75%)}
+#brain{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:pan-y;opacity:0;transition:opacity 1.4s ease}
+#brain:active{cursor:grabbing}
+.hero.ready #brain{opacity:1}
+#stage-msg{position:absolute;left:0;right:0;top:42%;text-align:center;color:var(--muted);font-size:.95rem;padding:0 24px}
+.hero.ready #stage-msg{display:none}
+.shade{position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(to top,#000 18%,rgba(0,0,0,.7) 52%,rgba(0,0,0,0));pointer-events:none;z-index:2}
+.top{position:absolute;top:0;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:22px 32px}
+.brand{font-family:var(--display);font-weight:600;font-size:1.05rem;letter-spacing:-0.01em;text-decoration:none}
+.top nav{display:flex;gap:26px}
+.top nav a{color:var(--soft);text-decoration:none;font-size:.95rem}
+.top nav a:hover{color:var(--ink)}
+
+.slide{position:absolute;left:32px;bottom:122px;width:min(560px,calc(100% - 64px));z-index:3;opacity:0;transform:translateY(12px);transition:opacity .55s ease,transform .55s ease;pointer-events:none}
+.slide.active{opacity:1;transform:none;pointer-events:auto}
+.slide h1{font-size:clamp(2.3rem,4.6vw,4.1rem);line-height:.98;max-width:14ch}
+.slide h2{font-size:clamp(2rem,3.6vw,3.2rem);line-height:1}
+.slide .lede{color:var(--soft);margin-top:18px;max-width:46ch;font-size:1.08rem}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.cta a{text-decoration:none;font-weight:600;font-size:.95rem;padding:10px 18px;border-radius:999px;border:1px solid var(--line2)}
+.cta a.primary{background:var(--ink);color:#000;border-color:var(--ink)}
+.cta a:hover{border-color:var(--ink)}
+.facts{display:flex;gap:36px;flex-wrap:wrap;margin-top:28px}
+.facts b{display:block;font-family:var(--display);font-size:1.7rem;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.facts span{color:var(--muted);font-size:.88rem}
+#thumbs{display:flex;gap:14px;margin-top:24px}
+#thumbs figure{margin:0}
+#thumbs canvas{width:104px;height:auto;display:block;border-radius:8px;background:#000;border:1px solid var(--line);border-top:3px solid var(--c)}
+#thumbs figcaption{font-size:.82rem;color:var(--soft);margin-top:6px}
+
+.slide-panel{left:auto;right:32px;top:84px;bottom:auto;max-height:calc(100% - 196px);width:min(400px,36vw);background:rgba(10,10,11,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:22px;overflow:auto}
+.slide-panel h2{font-size:1.65rem}
+.slide-panel .lede{font-size:.95rem;margin-top:8px}
+#slices{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:12px}
+.slice{display:grid;grid-template-columns:76px 1fr;gap:14px;align-items:center;padding:10px;border-radius:14px;background:var(--card2);border-left:3px solid var(--c)}
+.slice canvas{width:76px;height:auto;border-radius:6px;background:#000;display:block}
+.slice-head{display:flex;justify-content:space-between;font-weight:600;font-size:.95rem}
+.slice-head output{color:var(--c);font-variant-numeric:tabular-nums}
+.slice input[type=range]{width:100%;accent-color:var(--c);margin:8px 0 6px}
+.cut{background:transparent;border:1px solid var(--line2);border-radius:999px;padding:3px 12px;font-size:.84rem}
+.cut:hover{border-color:var(--c)}
+.cut[aria-pressed=true]{background:var(--c);border-color:var(--c);color:#000;font-weight:600}
+#reset{margin-top:14px;background:none;border:0;padding:0;text-decoration:underline;color:var(--soft);font-size:.9rem}
+.panel-note{color:var(--muted);font-size:.82rem;margin-top:12px}
+
+.controls{position:absolute;left:32px;right:32px;bottom:34px;z-index:5;display:flex;align-items:center;gap:22px}
+.dots{display:flex;gap:12px;flex:1;max-width:720px}
+.dot{flex:1;background:none;border:0;text-align:left;padding:12px 0 0;color:var(--muted);font-size:.86rem;position:relative;white-space:nowrap}
+.dot::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--line2);border-radius:2px}
+.dot i{position:absolute;top:0;left:0;height:2px;width:0;background:var(--ink);border-radius:2px}
+.dot[aria-current=true]{color:var(--ink)}
+.dot[aria-current=true] i{width:100%}
+.hero.playing .dot[aria-current=true] i{animation:fill var(--dur) linear forwards}
+@keyframes fill{from{width:0}to{width:100%}}
+.arrows{display:flex;gap:8px;margin-left:auto}
+.arrow{width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:transparent;display:grid;place-items:center}
+.arrow:hover{border-color:var(--ink)}
+.arrow svg{width:18px;height:18px}
+#pause{background:none;border:1px solid var(--line2);border-radius:999px;padding:9px 16px;font-size:.88rem;color:var(--soft)}
+.hint{position:absolute;right:32px;bottom:96px;z-index:3;color:var(--muted);font-size:.82rem;transition:opacity .4s}
+.hero[data-slide="3"] .hint{opacity:0}
+
+/* ---------- sections ---------- */
+section.block{padding:110px 0 0}
+.eyebrowless{color:var(--soft);margin-top:16px;max-width:66ch}
+h2.big{font-size:clamp(2rem,3.8vw,3rem);line-height:1.02;max-width:22ch}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px;min-width:0}
+.card h3{font-size:1.2rem;letter-spacing:-0.01em}
+.card .cap{color:var(--muted);font-size:.9rem;margin-top:4px}
+.c5{grid-column:span 5}.c7{grid-column:span 7}.c6{grid-column:span 6}
+.fine{color:var(--muted);font-size:.86rem;margin-top:14px;max-width:96ch}
+
+.legend{display:flex;gap:18px;margin-top:14px;font-size:.9rem;color:var(--soft)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+.pyr-ends{display:grid;grid-template-columns:1fr 3.2ch 1fr;gap:8px;font-size:.84rem;color:var(--soft);margin-top:18px}
+.pyr-ends span:first-child{text-align:right}
+#age{margin-top:10px;display:grid;gap:2px}
+.pyr-row{display:grid;grid-template-columns:1fr 3.2ch 1fr;gap:8px;align-items:center;height:15px}
+.pyr-f{display:flex;justify-content:flex-end;height:100%}
+.pyr-m{display:flex;height:100%}
+.pyr-f i,.pyr-m i{display:block;height:100%;min-width:2px}
+.pyr-f i{background:var(--bar);border-radius:4px 0 0 4px}
+.pyr-m i{background:var(--bar2);border-radius:0 4px 4px 0}
+.pyr-f i:hover,.pyr-m i:hover,.col-plot i:hover{filter:brightness(1.25)}
+.pyr-age{font-size:.74rem;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+
+.hbs{margin-top:18px;display:grid;gap:14px}
+.hb{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;align-items:center}
+.hb-name{font-size:.95rem}
+.hb-val{font-variant-numeric:tabular-nums;font-weight:600}
+.hb-bar{grid-column:1 / -1;height:8px;background:var(--card2);border-radius:4px;overflow:hidden}
+.hb-bar i{display:block;height:100%;background:var(--bar);border-radius:0 4px 4px 0}
+.hb-sub{grid-column:1 / -1;font-size:.8rem;color:var(--muted);margin-top:-3px}
+
+.path{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:34px;margin-top:18px}
+#labels{display:grid;gap:2px}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;align-items:center;text-align:left;background:transparent;border:0;border-radius:10px;padding:7px 10px;font-size:.93rem}
+.lab:hover:not(:disabled){background:var(--card2)}
+.lab[aria-pressed=true]{background:var(--card2);box-shadow:inset 2px 0 0 var(--ink)}
+.lab:disabled{cursor:default;color:var(--muted)}
+.lab-bar{grid-column:1 / -1;height:5px;background:var(--card2);border-radius:3px;overflow:hidden}
+.lab[aria-pressed=true] .lab-bar{background:var(--line2)}
+.lab-bar i{display:block;height:100%;background:var(--bar);border-radius:0 3px 3px 0}
+.lab-val{text-align:right;font-variant-numeric:tabular-nums}
+.lab.extra{display:none}
+#labels.all .lab.extra{display:grid}
+#labels-more{margin-top:10px;background:none;border:0;padding:0 10px;text-decoration:underline;color:var(--soft);font-size:.92rem}
+.profile-wrap{position:sticky;top:20px;align-self:start}
+#profile-title{font-size:1.05rem}
+#profile{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;height:340px;margin-top:20px}
+.col{display:grid;grid-template-rows:1fr auto;gap:6px;text-align:center;min-width:0}
+.col-plot{display:flex;flex-direction:column;justify-content:flex-end;gap:4px;border-bottom:1px solid var(--line2);min-height:0}
+.col-val{font-size:.8rem;font-variant-numeric:tabular-nums}
+.col-plot i{display:block;width:100%;flex:none;background:var(--bar);border-radius:4px 4px 0 0}
+.col-plot i.sup{height:10px;background:repeating-linear-gradient(135deg,var(--line2) 0 3px,transparent 3px 6px);border-radius:0}
+.col-name{font-size:.8rem;color:var(--muted);white-space:nowrap}
+
+ol.steps{list-style:none;counter-reset:s;margin:40px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+ol.steps li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
+ol.steps li::before{content:counter(s);font-family:var(--display);font-size:1.5rem;font-weight:600;color:var(--muted);display:block;margin-bottom:8px}
+ol.steps strong{display:block;font-family:var(--display);font-size:1.12rem;margin-bottom:4px}
+ol.steps span{color:var(--soft);font-size:.95rem}
+
+.status{margin-top:40px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+.status .big{font-family:var(--display);font-size:1.5rem;line-height:1.2;letter-spacing:-0.015em}
+.status p + p{margin-top:12px;color:var(--soft)}
+.ladder{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px}
+.ladder li{display:grid;grid-template-columns:4.6ch 1fr;gap:12px;align-items:center;font-size:.93rem}
+.ladder b{text-align:right;font-variant-numeric:tabular-nums}
+.ladder div{background:var(--card2);border-radius:8px;position:relative;overflow:hidden;padding:7px 11px}
+.ladder div::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);background:#0E4F49}
+.ladder span{position:relative}
+
+footer{margin-top:110px;border-top:1px solid var(--line);padding:32px 0 64px;color:var(--muted);font-size:.88rem}
+footer p{max-width:100ch}
+footer p + p{margin-top:8px}
+footer a{color:var(--soft)}
+#tip{position:fixed;z-index:30;pointer-events:none;background:#F3F3F1;color:#000;border-radius:8px;padding:7px 11px;font-size:.86rem;box-shadow:0 8px 28px rgba(0,0,0,.6);max-width:260px}
+#tip strong{display:block;font-size:.98rem}
+#tip span{color:#4A4A46}
+
+@media (max-width:1000px){
+  .c5,.c7,.c6{grid-column:span 12}
+  ol.steps{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .wrap{padding:0 20px}
+  .top{padding:16px 20px}
+  .top nav a:not(.gh){display:none}
+  .slide{left:20px;bottom:100px;width:calc(100% - 40px)}
+  .slide h1{font-size:2.15rem}
+  .slide h2{font-size:1.9rem}
+  .slide .lede{font-size:1rem;margin-top:12px}
+  .facts{gap:22px;margin-top:20px}
+  .facts b{font-size:1.35rem}
+  #thumbs canvas{width:84px}
+  .slide-panel{left:12px;right:12px;width:auto;top:auto;bottom:88px;max-height:50%;padding:14px}
+  .slide-panel h2{font-size:1.3rem}
+  #slices{margin-top:10px;gap:8px}
+  .panel-note{display:none}
+  .slide-panel .lede{display:none}
+  .slice{grid-template-columns:58px 1fr;padding:8px;gap:10px}
+  .slice canvas{width:58px}
+  .controls{left:20px;right:20px;bottom:24px;gap:12px}
+  .dot{font-size:0;padding-top:10px}
+  .arrow{width:40px;height:40px}
+  .hint{display:none}
+  .path{grid-template-columns:1fr}
+  .profile-wrap{position:static}
+  ol.steps{grid-template-columns:1fr}
+  .status{grid-template-columns:1fr}
+  section.block{padding-top:80px}
+  #profile{gap:4px;height:280px}
+  .col-name{font-size:.7rem}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}#brain,.slide{transition:none}.slide{transform:none}}
+</style>
+</head>
+<body>
+<header class="hero" id="hero" aria-roledescription="carousel" aria-label="3D brain explorer">
+  <canvas id="brain" tabindex="0" role="img" aria-label="Rotatable 3D brain surface. Coloured planes mark the three axial slices the pipeline samples."></canvas>
+  <p id="stage-msg">Loading the 3D brain</p>
+  <div class="shade"></div>
+  <div class="top">
+    <a class="brand" href="#hero">MR-RATE explorer</a>
+    <nav aria-label="Page"><a href="#data">Data</a><a href="#pipeline">Pipeline</a><a class="gh" href="https://github.com/amir-aman/mr-rate">GitHub</a></nav>
+  </div>
+
+  <article class="slide" aria-roledescription="slide" aria-label="1 of 4">
+    <h1>Can three slices of a brain find its radiology report?</h1>
+    <p class="lede">A retrieval baseline on MR-RATE, a public set of brain MRI scans paired with radiology reports. It ranks reports with MedSigLIP, a frozen medical vision-language model.</p>
+    <div class="facts">
+      <div><b id="n-volumes"></b><span>MRI volumes</span></div>
+      <div><b id="n-studies"></b><span>imaging studies</span></div>
+      <div><b id="n-patients"></b><span>patients</span></div>
+    </div>
+  </article>
+  <article class="slide" aria-roledescription="slide" aria-label="2 of 4">
+    <h2>Three slices per scan</h2>
+    <p class="lede">The pipeline reorients each scan and takes three axial slices near 20%, 50% and 80% of the brain's height. The rest of the volume is left out.</p>
+  </article>
+  <article class="slide" aria-roledescription="slide" aria-label="3 of 4">
+    <h2>What the model sees</h2>
+    <p class="lede">Each slice becomes one image for the vision encoder. The three embeddings are averaged into one vector and compared with the embedding of each report.</p>
+    <div id="thumbs"></div>
+  </article>
+  <article class="slide slide-panel" aria-roledescription="slide" aria-label="4 of 4">
+    <h2>Move the slices yourself</h2>
+    <p class="lede">Drag a slider or cut the brain open at any level.</p>
+    <ol id="slices"></ol>
+    <button id="reset" type="button">Reset to 20%, 50% and 80%</button>
+    <p class="panel-note">The brain is the MNI ICBM152 average template, built from healthy volunteers. It is not an MR-RATE scan.</p>
+  </article>
+
+  <p class="hint">Drag the brain to rotate it</p>
+  <div class="controls">
+    <div class="dots">
+      <button class="dot" type="button"><i></i>Question</button>
+      <button class="dot" type="button"><i></i>Three slices</button>
+      <button class="dot" type="button"><i></i>Model input</button>
+      <button class="dot" type="button"><i></i>Try it</button>
+    </div>
+    <div class="arrows">
+      <button id="pause" type="button">Pause</button>
+      <button class="arrow" id="prev" type="button" aria-label="Previous slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="arrow" id="next" type="button" aria-label="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="block" id="data">
+    <h2 class="big">What MR-RATE looks like from the inside</h2>
+    <p class="eyebrowless" id="sample-line"></p>
+    <div class="grid">
+      <div class="card c5">
+        <h3>Who was scanned</h3>
+        <p class="cap">Studies by age and sex, in 5-year bands</p>
+        <div class="pyr-ends"><span>Women</span><span></span><span>Men</span></div>
+        <div id="age"></div>
+        <div class="legend"><span><i style="background:var(--bar)"></i>Women</span><span><i style="background:var(--bar2)"></i>Men</span></div>
+        <p class="fine" id="age-note"></p>
+      </div>
+      <div class="card c7">
+        <h3>What the radiologists found</h3>
+        <p class="cap">Share of studies with each pathology label. Select a label to see how it changes with age.</p>
+        <div class="path">
+          <div>
+            <div id="labels"></div>
+            <button id="labels-more" type="button"></button>
+          </div>
+          <div class="profile-wrap">
+            <h3 id="profile-title"></h3>
+            <div id="profile"></div>
+            <p class="fine" id="profile-note"></p>
+          </div>
+        </div>
+      </div>
+      <div class="card c6">
+        <h3>Scanners</h3>
+        <p class="cap">Studies per scanner model</p>
+        <div class="hbs" id="scanners"></div>
+      </div>
+      <div class="card c6">
+        <h3>MRI sequences</h3>
+        <p class="cap">Series per sequence type</p>
+        <div class="hbs" id="modality"></div>
+        <p class="fine" id="report-stat"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="pipeline">
+    <h2 class="big">From one scan to one ranking</h2>
+    <p class="eyebrowless">The model stays frozen. Nothing is trained or fine-tuned.</p>
+    <ol class="steps">
+      <li><strong>Validate</strong><span>Check the joins between series, reports and splits, and confirm no patient crosses splits.</span></li>
+      <li><strong>Select</strong><span>Screen for brain anatomy and keep one series per patient. FLAIR comes first, then T2w, then T1w.</span></li>
+      <li><strong>Download</strong><span>Fetch only the selected study archives, under a fixed size cap.</span></li>
+      <li><strong>Slice</strong><span>Reorient each volume to RAS axes and take three axial slices at 20%, 50% and 80%.</span></li>
+      <li><strong>Embed</strong><span>Encode the slices with the MedSigLIP vision tower and average them. Encode the report impression with the text tower.</span></li>
+      <li><strong>Rank</strong><span>Rank every report in the split by cosine similarity. Report R@1, R@5 and MRR with patient bootstrap intervals.</span></li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2 class="big">Where the project stands</h2>
+    <div class="status">
+      <div class="card">
+        <p class="big">No retrieval result is reported yet.</p>
+        <p>Download, validation and slice quality control are complete for the working batch. The MedSigLIP run on real data has not been done.</p>
+        <p>This is a research baseline. It makes no clinical or diagnostic claim.</p>
+      </div>
+      <div class="card">
+        <h3>The working cohort, batch 26</h3>
+        <ol class="ladder">
+          <li><b>311</b><div style="--w:100%"><span>studies</span></div></li>
+          <li><b>307</b><div style="--w:98.7%"><span>unique patients</span></div></li>
+          <li><b>257</b><div style="--w:82.6%"><span>pass brain screening and report checks</span></div></li>
+          <li><b>12</b><div style="--w:3.9%"><span>in the validation manifest</span></div></li>
+        </ol>
+        <p class="fine">The official split of this batch holds 277 training, 15 validation and 19 test studies. The test split stays untouched.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Built by Amirtaha Amanzadi. Project code under the MIT license.</p>
+    <p>This page shows aggregate counts only. It contains no MR-RATE images, report text or patient-level records, and cells with fewer than 5 studies are withheld. MR-RATE is released by Forithmus under CC BY-NC-SA 4.0 with additional access terms.</p>
+    <p>Brain surface and slices come from the MNI ICBM152 2009a nonlinear symmetric template, Copyright (C) 1993-2009 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University. 3D rendering uses three.js. See <a href="https://github.com/amir-aman/mr-rate/blob/master/docs/NOTICE.md">NOTICE.md</a> for licenses.</p>
+  </div>
+</footer>
+<div id="tip" hidden></div>
+<!--APP-->
+</body>
+</html>
