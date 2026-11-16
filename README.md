@@ -1,5 +1,9 @@
 # MR-RATE MRI–Report Retrieval with MedSigLIP
 
+[![offline-tests](https://github.com/amir-aman/mr-rate/actions/workflows/tests.yml/badge.svg)](https://github.com/amir-aman/mr-rate/actions/workflows/tests.yml)
+
+**[Open the interactive explorer](https://amir-aman.github.io/mr-rate/)** to rotate a 3D brain, move the three sampled slices, and browse aggregate MR-RATE statistics. The brain is the open MNI ICBM152 template. The page holds no MR-RATE images, report text or patient-level records.
+
 A reproducible research pipeline that asks whether three slices of a brain MRI can
 retrieve the study's radiology impression using frozen medical image/text embeddings.
 This is a 2.5D retrieval baseline for research, with no clinical or dementia prediction claim.
@@ -15,7 +19,7 @@ files may be stored locally, but only batch26 metadata are read for study select
 
 ## Quick start
 
-Run commands from this `code` directory. Python 3.11+ is supported.
+Run commands from the repository root. Python 3.11+ is supported.
 
 Windows PowerShell:
 
@@ -210,7 +214,8 @@ config/default.yaml           reproducible pilot choices
 src/mrrate_vlm/                dataset, download, imaging, embed, retrieval, evaluation, CLI
 tests/                        offline fixtures, leakage/safety/metric/API checks
 scripts/run_pilot.{ps1,sh}     complete pilot entry points
-docs/                         methods, sources, validation
+docs/                         methods, sources, validation, and the 3D explorer (index.html)
+explorer/                     source and build scripts for the explorer page
 MR_RATE_Codex_Handoff/         local handoff documents (ignored by Git)
 data/                         ignored local inputs and derived artifacts
 results/                      ignored aggregate run outputs

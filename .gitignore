@@ -32,3 +32,6 @@ build/
 dist/
 .coverage
 htmlcov/
+
+# Explorer: full aggregate dump stays local
+explorer/aggregates/stats_full_private.json
